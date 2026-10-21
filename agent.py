@@ -572,6 +572,16 @@ def _get_llm(model_name: str, temperature: float = 0.7):
         from langchain_google_genai import ChatGoogleGenerativeAI
         return ChatGoogleGenerativeAI(model=model_name, temperature=temperature)
 
+    # When OpenRouter / OpenAI-compatible is configured, route reasoning there too (no Gemini needed)
+    if OPENAI_BASE_URL:
+        from langchain_openai import ChatOpenAI
+        kwargs = {"model": model_name, "temperature": temperature, "base_url": OPENAI_BASE_URL}
+        if os.getenv("OPENAI_API_KEY"):
+            kwargs["api_key"] = os.getenv("OPENAI_API_KEY")
+        else:
+            kwargs["api_key"] = "not-needed"
+        return ChatOpenAI(**kwargs)
+
     # Gemini via Vertex AI (service account)
     import json as _json
     from langchain_google_vertexai import ChatVertexAI

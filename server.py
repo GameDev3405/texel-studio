@@ -42,8 +42,8 @@ class AssessmentResponse(BaseModel):
 
 # ── Config ──
 
-load_dotenv()
-load_dotenv(Path(__file__).parent.parent / "sprite-forge" / ".env")  # fallback to sprite-forge env
+load_dotenv(override=True)
+load_dotenv(Path(__file__).parent.parent / "sprite-forge" / ".env", override=True)  # fallback
 
 # Set GOOGLE_APPLICATION_CREDENTIALS for LangChain/Vertex AI
 if not os.getenv("GOOGLE_APPLICATION_CREDENTIALS"):
@@ -73,15 +73,22 @@ OPENAI_MODELS = [
 ]
 # Extra OpenAI / OpenAI-compatible model names (Llama.cpp, VLLM, LM Studio, etc.) registered via env.
 # Combined with OPENAI_BASE_URL in agent.py to route requests to a local/self-hosted endpoint.
-OPENAI_MODELS_CUSTOM = [m.strip() for m in os.getenv("OPENAI_MODELS", "").split(",") if m.strip()]
+OPENAI_MODELS_CUSTOM = [m.strip() for m in os.getenv("OPENAI_MODELS", "").split(",") if m.strip()] + [
+    "thinkingmachines/inkling:free", "thinkingmachines/inkling-small:free",
+    "poolside/laguna-s-2.1:free", "poolside/laguna-xs-2.1:free",
+    "nvidia/nemotron-3-super-120b-a12b:free", "nvidia/nemotron-3-ultra-550b-a55b:free",
+    "nvidia/nemotron-3.5-lightning:free",
+    "inclusionai/ling-3.0-flash-vl:free",
+    "stealth/space-bunny-alpha",
+]
 OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434")
 OLLAMA_MODELS = [m.strip() for m in os.getenv("OLLAMA_MODELS", "").split(",") if m.strip()]
 ALL_MODELS = GEMINI_MODELS + OPENAI_MODELS + OPENAI_MODELS_CUSTOM + OLLAMA_MODELS
-DEFAULT_MODEL = "gemini-3-flash-preview"
+DEFAULT_MODEL = "stealth/space-bunny-alpha"
 IMAGE_GEN_MODELS = [
-    "gemini-3.1-flash-image-preview",
+    "inclusionai/ling-3.0-flash-vl:free",
 ]
-DEFAULT_IMAGE_MODEL = "gemini-3.1-flash-image-preview"
+DEFAULT_IMAGE_MODEL = "inclusionai/ling-3.0-flash-vl:free"
 REFS_DIR = Path(__file__).parent / "references"
 REFS_DIR.mkdir(exist_ok=True)
 DB_PATH = Path(__file__).parent / "pixel_studio.db"
@@ -938,7 +945,7 @@ async def start_generation(data: GenerateRequest):
         raise HTTPException(400, "Colors array is required")
 
     db = get_db()
-    model = data.model if data.model in GEMINI_MODELS else DEFAULT_MODEL
+    model = data.model if data.model in ALL_MODELS else DEFAULT_MODEL
     cur = db.execute(
         "INSERT INTO generations (prompt, system_prompt, colors, size, model, reference_id, sprite_type) VALUES (?, ?, ?, ?, ?, ?, ?)",
         (data.prompt, data.system_prompt, json.dumps(data.colors), data.size, model, data.reference_id, data.sprite_type),
