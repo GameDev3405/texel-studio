@@ -15,3 +15,6 @@ frontend/.next/
 
 # Local IDE / agent config
 .claude/
+
+# Windows reserved device name artifact
+nul
